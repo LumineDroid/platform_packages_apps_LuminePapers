@@ -10,14 +10,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.lumine.papers.theme.LumineTheme
+import com.lumine.papers.theme.ThemeController
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
     setContent {
-      MaterialTheme {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("LuminePapers") }
+      val controller: ThemeController = viewModel()
+      val state = controller.state
+
+      LumineTheme(state) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+          Text(
+            text = state.wallpaper?.name ?: "LuminePapers",
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.headlineMedium,
+          )
+        }
       }
     }
   }
