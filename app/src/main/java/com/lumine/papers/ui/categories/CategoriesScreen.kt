@@ -40,11 +40,11 @@ fun CategoriesScreen(
   categories: List<WallCategory>,
   loading: Boolean,
   onOpen: (WallCategory) -> Unit,
-  onSettings: () -> Unit,
+  onAbout: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Column(modifier.fillMaxSize()) {
-    AppTopBar(title = "Categories", onSettings = onSettings)
+    AppTopBar(title = "Categories", onAbout = onAbout)
 
     Box(Modifier.weight(1f).fillMaxWidth()) {
       when {

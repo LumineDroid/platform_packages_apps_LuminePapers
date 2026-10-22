@@ -27,11 +27,11 @@ fun FavoritesScreen(
   walls: List<Wallpaper>,
   loading: Boolean,
   onOpen: (Wallpaper) -> Unit,
-  onSettings: () -> Unit,
+  onAbout: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   Column(modifier.fillMaxSize()) {
-    AppTopBar(title = "Favorites", onSettings = onSettings)
+    AppTopBar(title = "Favorites", onAbout = onAbout)
 
     Box(Modifier.weight(1f).fillMaxWidth()) {
       when {

@@ -23,9 +23,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SearchOff
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -57,7 +57,7 @@ private const val CARD_RATIO = 0.75f
 fun FeedScreen(
   vm: FeedViewModel,
   onOpen: (Wallpaper) -> Unit,
-  onSettings: () -> Unit,
+  onAbout: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
   val searchFocus = remember { FocusRequester() }
@@ -67,7 +67,7 @@ fun FeedScreen(
   }
 
   Column(modifier.fillMaxSize()) {
-    FeedTopBar(vm, searchFocus, onSettings)
+    FeedTopBar(vm, searchFocus, onAbout)
     CategoryTabs(vm)
 
     Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -116,7 +116,7 @@ fun FeedScreen(
 private fun FeedTopBar(
   vm: FeedViewModel,
   searchFocus: FocusRequester,
-  onSettings: () -> Unit,
+  onAbout: () -> Unit,
 ) {
   val scheme = MaterialTheme.colorScheme
   Row(
@@ -145,8 +145,8 @@ private fun FeedTopBar(
       IconButton(onClick = { vm.setSearch(true) }) {
         Icon(Icons.Rounded.Search, contentDescription = "Search", tint = scheme.onBackground)
       }
-      IconButton(onClick = onSettings) {
-        Icon(Icons.Rounded.Settings, contentDescription = "Settings", tint = scheme.onBackground)
+      IconButton(onClick = onAbout) {
+        Icon(Icons.Rounded.Info, contentDescription = "About", tint = scheme.onBackground)
       }
     }
   }

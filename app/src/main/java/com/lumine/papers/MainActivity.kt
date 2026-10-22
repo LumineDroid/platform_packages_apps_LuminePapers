@@ -28,13 +28,13 @@ import com.lumine.papers.theme.LumineTheme
 import com.lumine.papers.theme.ThemeController
 import com.lumine.papers.theme.isDark
 import com.lumine.papers.ui.Screen
+import com.lumine.papers.ui.about.AboutScreen
 import com.lumine.papers.ui.categories.CategoriesScreen
 import com.lumine.papers.ui.components.LumineBottomBar
 import com.lumine.papers.ui.favorites.FavoritesScreen
 import com.lumine.papers.ui.feed.FeedScreen
 import com.lumine.papers.ui.feed.FeedViewModel
 import com.lumine.papers.ui.preview.PreviewScreen
-import com.lumine.papers.ui.settings.SettingsScreen
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
       val themeState = themeController.state
 
       var tab by rememberSaveable { mutableStateOf(Screen.Feed) }
-      var showSettings by rememberSaveable { mutableStateOf(false) }
+      var showAbout by rememberSaveable { mutableStateOf(false) }
       var previewId by rememberSaveable { mutableStateOf("") }
 
       val previewWall =
@@ -57,10 +57,10 @@ class MainActivity : ComponentActivity() {
       }
 
       // Back closes the top overlay before it leaves the tab.
-      BackHandler(enabled = previewWall != null || showSettings) {
+      BackHandler(enabled = previewWall != null || showAbout) {
         when {
           previewWall != null -> previewId = ""
-          else -> showSettings = false
+          else -> showAbout = false
         }
       }
 
@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
       }
 
       LumineTheme(themeState) {
-        val showBottomBar = previewWall == null && !showSettings
+        val showBottomBar = previewWall == null && !showAbout
         Scaffold(
           containerColor = MaterialTheme.colorScheme.background,
           contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -88,11 +88,10 @@ class MainActivity : ComponentActivity() {
         ) { padding ->
           Surface(Modifier.padding(padding), color = MaterialTheme.colorScheme.background) {
             when {
-              showSettings ->
-                SettingsScreen(
+              showAbout ->
+                AboutScreen(
                   state = themeState,
                   onSelectMode = themeController::setMode,
-                  onBack = { showSettings = false },
                 )
 
               previewWall != null ->
@@ -109,7 +108,7 @@ class MainActivity : ComponentActivity() {
                 FeedScreen(
                   vm = feedVm,
                   onOpen = ::open,
-                  onSettings = { showSettings = true },
+                  onAbout = { showAbout = true },
                 )
 
               tab == Screen.Categories ->
@@ -120,7 +119,7 @@ class MainActivity : ComponentActivity() {
                     feedVm.selectCategory(category.id)
                     tab = Screen.Feed
                   },
-                  onSettings = { showSettings = true },
+                  onAbout = { showAbout = true },
                 )
 
               else ->
@@ -128,7 +127,7 @@ class MainActivity : ComponentActivity() {
                   walls = feedVm.walls.filter { FavoritesStore.contains(it.id) },
                   loading = feedVm.loading,
                   onOpen = ::open,
-                  onSettings = { showSettings = true },
+                  onAbout = { showAbout = true },
                 )
             }
           }
