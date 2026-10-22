@@ -16,24 +16,39 @@ import androidx.compose.ui.platform.LocalContext
 import com.lumine.papers.data.Wallpaper
 import com.lumine.papers.data.WallpaperStore
 import java.io.File
-import java.util.Collections
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private val cache =
-  Collections.synchronizedMap(
-    object : LinkedHashMap<String, ImageBitmap>(48, 0.75f, true) {
-      override fun removeEldestEntry(e: MutableMap.MutableEntry<String, ImageBitmap>) = size > 48
+/** Heap budget for decoded wallpapers; count-based limits blow up on full-res pages. */
+private const val CACHE_BYTE_LIMIT = 48L * 1024 * 1024
+
+private val cache = LinkedHashMap<String, ImageBitmap>(8, 0.75f, true)
+private var cacheBytes = 0L
+
+private fun ImageBitmap.byteSize(): Long = width.toLong() * height * 4L
+
+private fun cachedBitmap(key: String): ImageBitmap? = synchronized(cache) { cache[key] }
+
+private fun storeBitmap(key: String, bitmap: ImageBitmap) {
+  synchronized(cache) {
+    cache[key]?.let { cacheBytes -= it.byteSize() }
+    cache[key] = bitmap
+    cacheBytes += bitmap.byteSize()
+
+    val iterator = cache.entries.iterator()
+    while (cacheBytes > CACHE_BYTE_LIMIT && iterator.hasNext()) {
+      val eldest = iterator.next()
+      cacheBytes -= eldest.value.byteSize()
+      iterator.remove()
     }
-  )
+  }
+}
 
 /** Decodes a wallpaper file down to [maxDim], caching by file and size. */
 fun decodeWallpaperFile(file: File, maxDim: Int): ImageBitmap? {
   val key = "${file.path}@$maxDim"
-  cache[key]?.let {
-    cache[key] = it
-    return it
-  }
+  cachedBitmap(key)?.let { return it }
+
   val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
   BitmapFactory.decodeFile(file.path, bounds)
 
@@ -44,7 +59,7 @@ fun decodeWallpaperFile(file: File, maxDim: Int): ImageBitmap? {
   val opts = BitmapFactory.Options().apply { inSampleSize = sample }
   return BitmapFactory.decodeFile(file.path, opts)
     ?.asImageBitmap()
-    ?.also { cache[key] = it }
+    ?.also { storeBitmap(key, it) }
 }
 
 /** Renders a wallpaper, downloading it into the cache on first use. */
@@ -59,12 +74,9 @@ fun WallpaperImage(
   val bitmap by
     produceState<ImageBitmap?>(initialValue = null, key1 = wall.id, key2 = maxDim) {
       val file = WallpaperStore.fileFor(context, wall)
-      if (file.exists()) {
-        value = withContext(Dispatchers.IO) { decodeWallpaperFile(file, maxDim) }
-      } else {
-        val downloaded = WallpaperStore.ensure(context, wall) ?: return@produceState
-        value = withContext(Dispatchers.IO) { decodeWallpaperFile(downloaded, maxDim) }
-      }
+      val source =
+        if (file.exists()) file else WallpaperStore.ensure(context, wall) ?: return@produceState
+      value = withContext(Dispatchers.IO) { decodeWallpaperFile(source, maxDim) }
     }
 
   if (bitmap == null) Box(modifier.background(Color(0xFF16161D)))
