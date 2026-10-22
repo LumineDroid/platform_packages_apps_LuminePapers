@@ -6,16 +6,17 @@
   android:viewportWidth="108"
   android:viewportHeight="108">
 
+  <!-- Only visible under non-circular masks; tuned to the logo's own dark plum. -->
   <path android:pathData="M0,0h108v108h-108z">
     <aapt:attr name="android:fillColor">
       <gradient
         android:startX="0"
         android:startY="0"
-        android:endX="108"
+        android:endX="0"
         android:endY="108"
         android:type="linear">
-        <item android:offset="0" android:color="#FF160F2B" />
-        <item android:offset="1" android:color="#FF43206B" />
+        <item android:offset="0" android:color="#FF38173A" />
+        <item android:offset="1" android:color="#FF140616" />
       </gradient>
     </aapt:attr>
   </path>

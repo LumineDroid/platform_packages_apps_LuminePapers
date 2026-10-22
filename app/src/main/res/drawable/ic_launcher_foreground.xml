@@ -1,17 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-  android:width="108dp"
-  android:height="108dp"
-  android:viewportWidth="108"
-  android:viewportHeight="108">
-
-  <!-- Crescent moon, evenOdd cuts the offset circle out of the full one. -->
-  <path
-    android:fillColor="#FFF4ECFF"
-    android:fillType="evenOdd"
-    android:pathData="M54,32 a22,22 0 1,0 0,44 a22,22 0 1,0 0,-44 z M62,29 a23,23 0 1,0 0,46 a23,23 0 1,0 0,-46 z" />
-
-  <path
-    android:fillColor="#FFFFC98B"
-    android:pathData="M70,36 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 z" />
-</vector>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+  android:src="@mipmap/ic_launcher_fg"
+  android:gravity="fill" />
