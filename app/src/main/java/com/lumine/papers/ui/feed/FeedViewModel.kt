@@ -22,23 +22,59 @@ class FeedViewModel(app: Application) : AndroidViewModel(app) {
   var selected by mutableStateOf<String?>(null)
     private set
 
+  var query by mutableStateOf("")
+    private set
+
+  var searchOpen by mutableStateOf(false)
+    private set
+
   var loading by mutableStateOf(true)
     private set
 
   init {
+    load()
+  }
+
+  val visible: List<Wallpaper>
+    get() {
+      val category = selected
+      val needle = query.trim().lowercase()
+      return walls.filter { wall ->
+        (category == null || wall.category.lowercase() == category) &&
+          (needle.isEmpty() ||
+            wall.name.lowercase().contains(needle) ||
+            wall.category.lowercase().contains(needle) ||
+            wall.author.lowercase().contains(needle))
+      }
+    }
+
+  /** True when the manifest could not be read at all. */
+  val failed: Boolean
+    get() = !loading && walls.isEmpty()
+
+  fun selectCategory(id: String?) {
+    selected = id
+  }
+
+  fun updateQuery(value: String) {
+    query = value
+  }
+
+  fun setSearch(open: Boolean) {
+    searchOpen = open
+    if (!open) query = ""
+  }
+
+  fun reload() {
+    loading = true
+    load()
+  }
+
+  private fun load() {
     viewModelScope.launch {
-      walls = WallpaperRepository.load(app)
+      walls = WallpaperRepository.load(getApplication())
       categories = WallpaperRepository.categories(walls)
       loading = false
     }
   }
-
-  val visible: List<Wallpaper>
-    get() = selected?.let { id -> walls.filter { it.category.lowercase() == id } } ?: walls
-
-  fun toggleCategory(id: String) {
-    selected = if (selected == id) null else id
-  }
-
-  fun random(): Wallpaper? = visible.randomOrNull()
 }

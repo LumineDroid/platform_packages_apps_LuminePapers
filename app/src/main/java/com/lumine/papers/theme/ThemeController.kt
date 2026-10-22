@@ -1,61 +1,86 @@
 package com.lumine.papers.theme
 
 import android.app.Application
+import android.app.WallpaperManager
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
-import com.lumine.papers.data.Wallpaper
-import com.lumine.papers.data.WallpaperRepository
-import com.lumine.papers.data.WallpaperStore
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+
+/** User-facing theme choice. */
+enum class ThemeMode {
+  Light,
+  Dark,
+  System,
+}
+
+fun ThemeMode.isDark(systemDark: Boolean): Boolean =
+  when (this) {
+    ThemeMode.Dark -> true
+    ThemeMode.Light -> false
+    ThemeMode.System -> systemDark
+  }
 
 data class ThemeState(
-  val wallpaper: Wallpaper? = null,
-  val palette: WallpaperPalette = WallpaperPalette.Default,
-  val darkMode: Boolean = true,
+  val mode: ThemeMode = ThemeMode.System,
+  /** Bumped whenever the system wallpaper changes so colours get re-read. */
+  val wallpaperTick: Int = 0,
 )
 
-/** Holds the live theme and reseeds it whenever another wallpaper is picked. */
+/** Tracks the theme choice and pings the UI when the system wallpaper changes. */
 class ThemeController(app: Application) : AndroidViewModel(app) {
 
   private val prefs = app.getSharedPreferences("theme", 0)
+  private val wallpaperManager = WallpaperManager.getInstance(app)
 
   var state by mutableStateOf(ThemeState())
     private set
 
+  private val colorsListener =
+    WallpaperManager.OnColorsChangedListener { _, _ -> refreshWallpaperColors() }
+
   init {
-    state = ThemeState(darkMode = prefs.getBoolean(KEY_DARK, true))
-    viewModelScope.launch {
-      val walls = WallpaperRepository.load(getApplication())
-      val saved = WallpaperRepository.byId(walls, prefs.getString(KEY_WALL, null).orEmpty())
-      select(saved ?: walls.firstOrNull(), persist = false)
+    state = ThemeState(mode = readMode())
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      wallpaperManager.addOnColorsChangedListener(colorsListener, Handler(Looper.getMainLooper()))
     }
   }
 
-  fun toggleDarkMode() {
-    state = state.copy(darkMode = !state.darkMode)
-    prefs.edit().putBoolean(KEY_DARK, state.darkMode).apply()
+  fun setMode(mode: ThemeMode) {
+    state = state.copy(mode = mode)
+    prefs.edit().putString(KEY_MODE, mode.name).apply()
   }
 
-  fun select(wall: Wallpaper?, persist: Boolean = true) {
-    if (wall == null) return
-    viewModelScope.launch {
-      val palette =
-        withContext(Dispatchers.IO) {
-          val file = WallpaperStore.ensure(getApplication(), wall)
-          file?.let { decodeWallpaperPalette(it) } ?: WallpaperPalette.Default
-        }
-      state = state.copy(wallpaper = wall, palette = palette)
-      if (persist) prefs.edit().putString(KEY_WALL, wall.id).apply()
-    }
+  /** Forces a re-read of the wallpaper colours (SET AS and system changes). */
+  fun refreshWallpaperColors() {
+    state = state.copy(wallpaperTick = state.wallpaperTick + 1)
   }
+
+  override fun onCleared() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+      wallpaperManager.removeOnColorsChangedListener(colorsListener)
+    }
+    super.onCleared()
+  }
+
+  private fun readMode(): ThemeMode =
+    when (prefs.getString(KEY_MODE, null)) {
+      ThemeMode.Light.name -> ThemeMode.Light
+      ThemeMode.Dark.name -> ThemeMode.Dark
+      ThemeMode.System.name -> ThemeMode.System
+      // Installs that predate the three-way choice only stored a dark boolean.
+      null ->
+        if (prefs.contains(KEY_DARK)) {
+          if (prefs.getBoolean(KEY_DARK, true)) ThemeMode.Dark else ThemeMode.Light
+        } else ThemeMode.System
+      else -> ThemeMode.System
+    }
 
   private companion object {
-    const val KEY_WALL = "wallpaper"
+    const val KEY_MODE = "mode"
     const val KEY_DARK = "dark"
   }
 }

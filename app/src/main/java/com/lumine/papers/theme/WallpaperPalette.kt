@@ -1,13 +1,11 @@
 package com.lumine.papers.theme
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.palette.graphics.Palette
-import java.io.File
 
 /** Seed colours pulled out of a wallpaper. Drives the whole Material scheme. */
 data class WallpaperPalette(val primary: Color, val secondary: Color, val tertiary: Color) {
@@ -40,9 +38,10 @@ fun WallpaperPalette.scheme(isDark: Boolean): ColorScheme =
       primary = primary.mix(Color(0xFF1A1030), 0.42f),
       secondary = secondary.mix(Color(0xFF1A1030), 0.42f),
       tertiary = tertiary.mix(Color(0xFF1A1030), 0.42f),
-      background = base.mix(primary, 0.06f),
-      surface = base.mix(primary, 0.11f),
-      surfaceVariant = base.mix(secondary, 0.16f),
+      // Kept close to white so the feed reads like the reference design.
+      background = base.mix(primary, 0.04f),
+      surface = base.mix(primary, 0.07f),
+      surfaceVariant = base.mix(secondary, 0.12f),
     )
   }
 
@@ -59,17 +58,4 @@ fun Bitmap.toWallpaperPalette(): WallpaperPalette {
     secondary = Color(secondary?.rgb ?: 0xFF80CBC4.toInt()),
     tertiary = Color(tertiary?.rgb ?: 0xFFFFAB91.toInt()),
   )
-}
-
-/** Decodes a wallpaper down to [maxDim] so palette extraction stays cheap. */
-fun decodeWallpaperPalette(file: File, maxDim: Int = 160): WallpaperPalette? {
-  val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-  BitmapFactory.decodeFile(file.path, bounds)
-
-  var sample = 1
-  val longest = maxOf(bounds.outWidth, bounds.outHeight)
-  while (longest / (sample * 2) >= maxDim) sample *= 2
-
-  val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-  return BitmapFactory.decodeFile(file.path, opts)?.toWallpaperPalette()
 }
